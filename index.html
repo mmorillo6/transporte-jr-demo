@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Transporte Jose Rodriguez</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230D9488'/><text x='50' y='65' text-anchor='middle' fill='white' font-size='50' font-family='Arial' font-weight='bold'>JR</text></svg>">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body, #root { height: 100%; overflow: hidden; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  input, select, button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useRef, useCallback } = React;
+
+
+
+const AC = "#0D9488";
+const TK = [
+  { p:"A55BH6D", a:"R400", o:"José R.", d:"RICHARD", t:"T", c:"#15803d" },
+  { p:"A31CX2A", a:"DM 600", o:"José R.", d:"MICHEL", t:"T", c:"#c2410c" },
+  { p:"A02BK4F", a:"Sinotruk", o:"José R.", d:"MIGUEL", t:"T", c:"#1d4ed8" },
+  { p:"A97AV4H", a:"R600 Am.", o:"Leo R.", d:"NAUDY", t:"T", c:"#a16207" },
+  { p:"731XJP", a:"Iveco 330", o:"Leo R.", d:"ESNALDO", t:"T", c:"#0891b2" },
+  { p:"A31AA2L", a:"JAC Gallop", o:"Carlos R.", d:"GUSTAVO", t:"T", c:"#dc2626" },
+  { p:"A18AZ6C", a:"R600 Bl.", o:"Mauro G.", d:"JOHAN", t:"T", c:"#0d9488" },
+  { p:"A11AG8U", a:"DM800", o:"Fernando", d:"KHELTY", t:"T", c:"#7c3aed" },
+  { p:"43HLAC", a:"R400 Jq", o:"Hnos Neto", d:"JOAQUIN", t:"A", c:"#3f6212" },
+  { p:"72HLAC", a:"R400 La", o:"Hnos Neto", d:"LARRY", t:"A", c:"#92400e" },
+  { p:"A58DR3A", a:"R600 Rj", o:"De Freita", d:"AMANDIO", t:"A", c:"#1e40af" },
+  { p:"A70AI7C", a:"Fiat Ma.", o:"San Casimiro", d:"MARCOS", t:"A", c:"#57534e" },
+  { p:"A17BZ9K", a:"Fiat Ed.", o:"San Casimiro", d:"EDUARDO", t:"A", c:"#be185d" },
+];
+
+const BOARD = [
+  { p:"A55BH6D", tR:312, aR:2189, aT:23, st:"activo", tT:3 },
+  { p:"A31CX2A", tR:234, aR:1566, aT:18, st:"activo", tT:3 },
+  { p:"A02BK4F", tR:0, aR:920, aT:10, st:"espera", tT:0 },
+  { p:"A97AV4H", tR:147, aR:1776, aT:20, st:"activo", tT:2 },
+  { p:"731XJP", tR:198, aR:1340, aT:15, st:"activo", tT:2 },
+  { p:"A31AA2L", tR:205, aR:1413, aT:16, st:"activo", tT:3 },
+  { p:"A18AZ6C", tR:186, aR:1871, aT:20, st:"activo", tT:2 },
+  { p:"A11AG8U", tR:205, aR:1925, aT:23, st:"activo", tT:3 },
+  { p:"43HLAC", tR:231, aR:1972, aT:21, st:"activo", tT:3 },
+  { p:"72HLAC", tR:0, aR:712, aT:8, st:"espera", tT:0 },
+  { p:"A58DR3A", tR:0, aR:1406, aT:17, st:"inactivo", tT:0 },
+  { p:"A70AI7C", tR:148, aR:1170, aT:19, st:"activo", tT:2 },
+  { p:"A17BZ9K", tR:0, aR:1125, aT:13, st:"espera", tT:0 },
+].map(b => ({ ...b, ...TK.find(t => t.p === b.p) }));
+
+const TIX = [
+  { id:"t1", p:"A31AA2L", prob:"Revision frenos + latoneria", mec:"JHONNY",
+    parts:[{name:"Bandas freno delanteras",qty:2,st:"needed"},{name:"Disco freno",qty:1,st:"ordered"},{name:"Liquido frenos DOT4",qty:2,st:"received"}] },
+  { id:"t2", p:"A58DR3A", prob:"Pasadores ballesta trasera", mec:"MAURO",
+    parts:[{name:"Pasadores ballesta R20",qty:4,st:"needed"}] },
+];
+
+const TIMELINE = {
+  "A97AV4H": [{dt:"15/02",ms:"Fosforito",tr:2,tons:49,rev:147},{dt:"14/02",ms:"Nuevo Callao",tr:4,tons:79.7,rev:558},{dt:"11/02",ms:"Nuevo Callao",tr:3,tons:62,rev:434},{dt:"07/02",ms:"Charlie Richard",tr:6,tons:153.9,rev:462},{dt:"04/02",ms:"La Garrapata",tr:3,tons:67.9,rev:204}],
+  "731XJP": [{dt:"15/02",ms:"Fosforito",tr:3,tons:72,rev:216},{dt:"13/02",ms:"Nuevo Callao",tr:2,tons:45,rev:315},{dt:"10/02",ms:"Charlie Richard",tr:4,tons:98,rev:294},{dt:"06/02",ms:"Sosa Mendez",tr:3,tons:68,rev:238}],
+  "43HLAC": [{dt:"15/02",ms:"Fosforito",tr:3,tons:77.2,rev:232},{dt:"07/02",ms:"Charlie Richard",tr:8,tons:225.5,rev:676},{dt:"05/02",ms:"Sosa Mendez",tr:3,tons:71.5,rev:250},{dt:"04/02",ms:"La Garrapata",tr:4,tons:103,rev:309}],
+  "72HLAC": [{dt:"04/02",ms:"La Garrapata",tr:2,tons:49.2,rev:148},{dt:"04/02",ms:"Charlie Richard",tr:2,tons:52,rev:156},{dt:"03/02",ms:"Sosa Mendez",tr:3,tons:73.7,rev:258}],
+  "A58DR3A": [{dt:"13/02",ms:"Nuevo Callao",tr:2,tons:43,rev:301},{dt:"07/02",ms:"Charlie Richard",tr:7,tons:169,rev:507},{dt:"04/02",ms:"La Garrapata",tr:3,tons:69.3,rev:208},{dt:"01/02",ms:"Sosa Mendez",tr:5,tons:111.7,rev:391}],
+  "A70AI7C": [{dt:"15/02",ms:"Fosforito",tr:2,tons:49.3,rev:148},{dt:"11/02",ms:"Nuevo Callao",tr:4,tons:91.2,rev:639},{dt:"07/02",ms:"Charlie Richard",tr:5,tons:136.4,rev:409}],
+  "A17BZ9K": [{dt:"15/02",ms:"Fosforito",tr:3,tons:69.4,rev:208},{dt:"14/02",ms:"Nuevo Callao",tr:2,tons:42.1,rev:295},{dt:"07/02",ms:"Charlie Richard",tr:1,tons:28.1,rev:84},{dt:"06/02",ms:"Sosa Mendez",tr:3,tons:74.3,rev:260}],
+  "A18AZ6C": [{dt:"15/02",ms:"Fosforito",tr:2,tons:51.1,rev:153},{dt:"11/02",ms:"Nuevo Callao",tr:4,tons:88.7,rev:621},{dt:"07/02",ms:"Charlie Richard",tr:6,tons:155.2,rev:466},{dt:"03/02",ms:"Sosa Mendez",tr:4,tons:99.9,rev:350}],
+  "A31AA2L": [{dt:"15/02",ms:"Fosforito",tr:3,tons:68.2,rev:205},{dt:"07/02",ms:"Charlie Richard",tr:6,tons:148,rev:444},{dt:"04/02",ms:"La Garrapata",tr:4,tons:95.7,rev:287}],
+};
+
+const PARTNERS = {
+  "1001": { name: "Leo R.", plates: ["A97AV4H", "731XJP"] },
+  "1002": { name: "Carlos R.", plates: ["A31AA2L"] },
+  "1003": { name: "Mauro G.", plates: ["A18AZ6C"] },
+  "1005": { name: "San Casimiro", plates: ["A70AI7C", "A17BZ9K"] },
+  "1006": { name: "De Freita", plates: ["A58DR3A"] },
+  "1007": { name: "Hnos Neto", plates: ["43HLAC", "72HLAC"] },
+};
+
+const GASTOS = {
+  "A97AV4H": [{dt:"10/02",d:"Rep compuerta",am:60},{dt:"05/02",d:"Filtro aire",am:40}],
+  "731XJP": [{dt:"12/02",d:"Correa alternador",am:35}],
+  "A31AA2L": [{dt:"09/02",d:"Soldadura chasis",am:200}],
+  "A18AZ6C": [{dt:"10/02",d:"Pasadores R20",am:220},{dt:"19/02",d:"Vejiga asiento",am:120}],
+  "43HLAC": [{dt:"13/02",d:"Rep alternador",am:90}],
+  "72HLAC": [{dt:"12/02",d:"Rep alternador",am:70},{dt:"14/02",d:"Torno damper",am:80}],
+  "A58DR3A": [{dt:"10/02",d:"Paila aceite 320",am:85}],
+  "A70AI7C": [{dt:"12/02",d:"2 filtros aceite",am:40},{dt:"13/02",d:"2 pailas SAE50",am:290}],
+  "A17BZ9K": [{dt:"07/02",d:"Rep luces",am:60},{dt:"07/02",d:"Tornillos 14mm",am:57}],
+};
+
+const $ = n => "$" + (n || 0).toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const Dot = ({ color, size = 8 }) => <span style={{ width: size, height: size, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />;
+const gt = p => TK.find(t => t.p === p);
+
+/* SVG Icons - reliable across all devices */
+const IconHome = ({s=18,c="currentColor"}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+const IconTruck = ({s=18,c="currentColor"}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>;
+const IconWrench = ({s=18,c="currentColor"}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>;
+const IconDollar = ({s=18,c="currentColor"}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>;
+const IconMore = ({s=18,c="currentColor"}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>;
+const IconSend = ({s=12,c="white"}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+const IconAlert = ({s=14,c="#DC2626"}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+const IconChev = ({s=14,c="#9CA3AF"}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>;
+
+const PINS = {
+  "1234": { name: "Fernando", role: "admin", sub: "Encargado" },
+  "5678": { name: "Jhonny", role: "mechanic", sub: "Mecanico" },
+  "0000": { name: "Jose R.", role: "viewer", sub: "Dueno" },
+  "1001": { name: "Leo R.", role: "partner", sub: "Socio (2 camiones)" },
+  "1007": { name: "Hnos Neto", role: "partner", sub: "Socio (2 camiones)" },
+  "1006": { name: "De Freita", role: "partner", sub: "Socio (1 camion)" },
+};
+
+/* ═══ LOGIN - FIXED with useRef to avoid stale closure ═══ */
+function LoginScreen({ onLogin }) {
+  const [pin, setPin] = useState("");
+  const [shake, setShake] = useState(false);
+  const pinRef = useRef("");
+
+  const handleDigit = useCallback((digit) => {
+    const next = pinRef.current + digit;
+    if (next.length > 4) return;
+    pinRef.current = next;
+    setPin(next);
+    if (next.length === 4) {
+      setTimeout(() => {
+        const match = PINS[next];
+        if (match) {
+          onLogin({ pin: next, ...match });
+        } else {
+          setShake(true);
+          setTimeout(() => {
+            setShake(false);
+            pinRef.current = "";
+            setPin("");
+          }, 500);
+        }
+      }, 200);
+    }
+  }, [onLogin]);
+
+  const handleDelete = useCallback(() => {
+    pinRef.current = pinRef.current.slice(0, -1);
+    setPin(pinRef.current);
+  }, []);
+
+  const quickLogin = useCallback((pinCode) => {
+    const match = PINS[pinCode];
+    if (match) onLogin({ pin: pinCode, ...match });
+  }, [onLogin]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "linear-gradient(160deg, #111827 0%, #1F2937 50%, #0F172A 100%)", padding: 24, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      <div style={{ width: 56, height: 56, borderRadius: 16, background: AC, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+        <IconTruck s={28} c="white" />
+      </div>
+      <h1 style={{ color: "white", fontSize: 20, fontWeight: 700, margin: 0 }}>Transporte Jose Rodriguez</h1>
+      <p style={{ color: "#9CA3AF", fontSize: 13, margin: "4px 0 32px" }}>Sistema de gestion - 13 camiones</p>
+
+      <div style={{ display: "flex", gap: 12, marginBottom: 32, animation: shake ? "shake .4s" : "none" }}>
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} style={{ width: 16, height: 16, borderRadius: "50%", background: i < pin.length ? AC : "#374151", transition: "all .15s", transform: i < pin.length ? "scale(1.2)" : "scale(1)" }} />
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, maxWidth: 240 }}>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, "del"].map((d, i) => (
+          d === null ? <div key={i} /> :
+          <button key={i}
+            onClick={() => d === "del" ? handleDelete() : handleDigit(String(d))}
+            style={{ width: 64, height: 64, borderRadius: 32, background: d === "del" ? "transparent" : "#1F2937", border: d === "del" ? "none" : "1px solid #374151", color: "white", fontSize: d === "del" ? 16 : 24, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {d === "del" ? "<" : d}
+          </button>
+        ))}
+      </div>
+
+      <p style={{ color: "#4B5563", fontSize: 10, margin: "24px 0 8px" }}>Acceso rapido (demo):</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 360 }}>
+        {Object.entries(PINS).map(([code, u]) => (
+          <button key={code} onClick={() => quickLogin(code)}
+            style={{ background: "#1F2937", border: "1px solid #374151", borderRadius: 10, padding: "6px 12px", color: "#9CA3AF", fontSize: 10, cursor: "pointer" }}>
+            <span style={{ color: "white", fontWeight: 600 }}>{u.sub}</span><br />PIN: {code}
+          </button>
+        ))}
+      </div>
+      <style>{`@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}`}</style>
+    </div>
+  );
+}
+
+/* ═══ DEMO DATA for trips & expenses ═══ */
+const DEMO_TRIPS = [
+  { dt: "15/02", p: "A55BH6D", mine: "Fosforito", tons: 78.26, tr: 3, rev: 234.78 },
+  { dt: "15/02", p: "A97AV4H", mine: "Fosforito", tons: 49.00, tr: 2, rev: 147.00 },
+  { dt: "15/02", p: "43HLAC", mine: "Fosforito", tons: 77.22, tr: 3, rev: 231.66 },
+  { dt: "15/02", p: "A11AG8U", mine: "Fosforito", tons: 68.22, tr: 3, rev: 204.66 },
+  { dt: "15/02", p: "A31AA2L", mine: "Fosforito", tons: 68.20, tr: 3, rev: 204.60 },
+  { dt: "14/02", p: "A97AV4H", mine: "Nuevo Callao", tons: 79.73, tr: 4, rev: 558.11 },
+  { dt: "14/02", p: "A17BZ9K", mine: "Nuevo Callao", tons: 42.09, tr: 2, rev: 294.63 },
+  { dt: "13/02", p: "A31CX2A", mine: "Nuevo Callao", tons: 71.22, tr: 3, rev: 498.54 },
+  { dt: "13/02", p: "43HLAC", mine: "Nuevo Callao", tons: 72.19, tr: 3, rev: 505.33 },
+  { dt: "11/02", p: "A55BH6D", mine: "Nuevo Callao", tons: 97.71, tr: 4, rev: 683.97 },
+  { dt: "07/02", p: "A55BH6D", mine: "Charlie Richard", tons: 215.28, tr: 8, rev: 645.84 },
+  { dt: "07/02", p: "43HLAC", mine: "Charlie Richard", tons: 225.48, tr: 8, rev: 676.44 },
+  { dt: "07/02", p: "A11AG8U", mine: "Charlie Richard", tons: 192.16, tr: 8, rev: 576.48 },
+  { dt: "04/02", p: "A97AV4H", mine: "La Garrapata", tons: 67.90, tr: 3, rev: 203.70 },
+  { dt: "04/02", p: "43HLAC", mine: "La Garrapata", tons: 102.98, tr: 4, rev: 308.94 },
+  { dt: "01/02", p: "A97AV4H", mine: "Sosa Mendez", tons: 115.86, tr: 5, rev: 405.51 },
+  { dt: "01/02", p: "A58DR3A", mine: "Sosa Mendez", tons: 111.68, tr: 5, rev: 390.88 },
+];
+
+const DEMO_EXP = [
+  { dt: "07/02", p: "COMUN", d: "2 Silicone gris", am: 5, cat: "insumo" },
+  { dt: "07/02", p: "A17BZ9K", d: "Rep luces", am: 60, cat: "electrico" },
+  { dt: "09/02", p: "A31CX2A", d: "Refuerzo chasis", am: 500, cat: "soldadura" },
+  { dt: "10/02", p: "COMUN", d: "Paila SAE50", am: 145, cat: "aceite" },
+  { dt: "10/02", p: "A18AZ6C", d: "Pasadores R20", am: 220, cat: "repuesto" },
+  { dt: "12/02", p: "A11AG8U", d: "3 filtros DM800", am: 90, cat: "filtro" },
+  { dt: "12/02", p: "72HLAC", d: "Rep alternador", am: 70, cat: "electrico" },
+  { dt: "13/02", p: "A70AI7C", d: "2 pailas SAE50", am: 290, cat: "aceite" },
+  { dt: "15/02", p: "A97AV4H", d: "Rep compuerta", am: 60, cat: "soldadura" },
+  { dt: "19/02", p: "A18AZ6C", d: "Vejiga asiento", am: 120, cat: "repuesto" },
+];
+
+/* ═══ ADMIN VIEW ═══ */
+function AdminView({ page, setPage }) {
+  const maxR = Math.max(...BOARD.map(b => b.aR));
+  const stC = { activo: { bg: "#DCFCE7", c: "#15803d" }, taller: { bg: "#FEE2E2", c: "#991b1b" }, inactivo: { bg: "#FEF3C7", c: "#92400e" }, espera: { bg: "#F3F4F6", c: "#6B7280" } };
+  const pendP = TIX.reduce((s, t) => s + t.parts.filter(p => p.st === "needed").length, 0);
+  const sorted = [...BOARD].sort((a, b) => b.tR - a.tR || b.aR - a.aR);
+
+  /* Fiados state (interactive) */
+  const [fiadosData, setFiadosData] = useState([
+    { id: 0, prov: "Valencia Cauchos", desc: "2 cauchos 315/80R22.5 - Bartolo", p: "A18AZ6C", am: 460, pd: 0, cuotas: 2, vence: "15/03", pagos: [] },
+    { id: 1, prov: "Joaquin Cauchos", desc: "4 cauchos 1200R24", p: "43HLAC", am: 1480, pd: 400, cuotas: 2, vence: "01/03", pagos: [{ am: 400, dt: "01/02", met: "cash" }] },
+    { id: 2, prov: "Serifrenos", desc: "Bandas + resortes - Bartolo", p: "A18AZ6C", am: 76, pd: 0, cuotas: 1, vence: "15/03", pagos: [] },
+    { id: 3, prov: "Agenol", desc: "Collarin R400", p: "A55BH6D", am: 275, pd: 0, cuotas: 1, vence: "15/03", pagos: [] },
+  ]);
+  const [payForm, setPayForm] = useState(null);
+  const [payAm, setPayAm] = useState("");
+  const [payDt, setPayDt] = useState("27/03");
+  const [payMet, setPayMet] = useState("cash");
+
+  /* ── VIAJES PAGE ── */
+  if (page === "viajes") {
+    const byTruck = {};
+    DEMO_TRIPS.forEach(t => {
+      if (!byTruck[t.p]) byTruck[t.p] = { tons: 0, tr: 0, rev: 0, mines: {} };
+      byTruck[t.p].tons += t.tons; byTruck[t.p].tr += t.tr; byTruck[t.p].rev += t.rev;
+      if (!byTruck[t.p].mines[t.mine]) byTruck[t.p].mines[t.mine] = 0;
+      byTruck[t.p].mines[t.mine] += t.tons;
+    });
+    const truckList = Object.entries(byTruck).sort((a, b) => b[1].rev - a[1].rev);
+    return (
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Viajes</h2>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button style={{ background: "#2563EB", color: "white", border: "none", borderRadius: 10, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Importar .xlsx</button>
+            <button style={{ background: AC, color: "white", border: "none", borderRadius: 10, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Manual</button>
+          </div>
+        </div>
+        <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 12px" }}>{DEMO_TRIPS.length} viajes - {$(DEMO_TRIPS.reduce((s, t) => s + t.rev, 0))} facturado</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {truckList.map(([pl, d]) => { const tk = gt(pl); return (
+            <div key={pl} style={{ background: "white", borderRadius: 16, border: "1px solid #F3F4F6", padding: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: tk?.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 9, fontWeight: 700, flexShrink: 0 }}>{tk?.a?.slice(0, 2)}</div>
+                <div style={{ flex: 1 }}><p style={{ fontWeight: 700, fontSize: 12, margin: 0 }}>{tk?.a} <span style={{ fontWeight: 400, color: "#9CA3AF" }}>{tk?.d}</span></p><p style={{ fontSize: 10, color: "#6B7280", margin: 0 }}>{d.tons.toFixed(0)}t - {d.tr}v</p></div>
+                <p style={{ fontWeight: 700, fontSize: 13, color: "#059669", margin: 0 }}>{$(d.rev)}</p>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                {Object.entries(d.mines).map(([m, t2]) => <span key={m} style={{ fontSize: 9, background: "#F3F4F6", borderRadius: 6, padding: "2px 6px" }}>{m}: {t2.toFixed(0)}t</span>)}
+              </div>
+            </div>
+          ); })}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── GASTOS PAGE ── */
+  if (page === "gastos") {
+    const byTarget = {};
+    DEMO_EXP.forEach(e => { (byTarget[e.p] = byTarget[e.p] || []).push(e); });
+    const targetList = Object.entries(byTarget).sort((a, b) => b[1].reduce((s, x) => s + x.am, 0) - a[1].reduce((s, x) => s + x.am, 0));
+    const totalExp = DEMO_EXP.reduce((s, e) => s + e.am, 0);
+    return (
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Gastos pagados</h2>
+          <button style={{ background: "#EA580C", color: "white", border: "none", borderRadius: 10, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Nuevo</button>
+        </div>
+        <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 12px" }}>Total: {$(totalExp)}</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {targetList.map(([pl, exps]) => {
+            const tk = gt(pl); const total = exps.reduce((s, e) => s + e.am, 0);
+            const label = pl === "COMUN" ? "Comunes" : pl === "NPR" ? "NPR" : tk?.a || pl;
+            const color = tk?.c || "#888";
+            return (
+              <div key={pl} style={{ background: "white", borderRadius: 16, border: "1px solid #F3F4F6", padding: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, background: color, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 7, fontWeight: 700 }}>{pl === "COMUN" ? "CC" : pl === "NPR" ? "NP" : tk?.a?.slice(0, 2)}</div>
+                  <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{label}</span>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "#EA580C" }}>{$(total)}</span>
+                </div>
+                {exps.map((e, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderTop: "1px solid #F9FAFB" }}>
+                    <span style={{ color: "#6B7280" }}><span style={{ color: "#9CA3AF" }}>{e.dt} </span>{e.d}</span>
+                    <span style={{ fontWeight: 500 }}>{$(e.am)}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── TALLER PAGE ── */
+  if (page === "taller") return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Taller</h2>
+        <button style={{ background: "#EF4444", color: "white", border: "none", borderRadius: 12, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>+ Ingreso</button>
+      </div>
+      {TIX.map(t => { const tk = gt(t.p); const needed = t.parts.filter(p => p.st === "needed"); return (
+        <div key={t.id} style={{ background: "white", border: "2px solid #FCA5A5", borderRadius: 20, padding: 16, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: tk?.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 10, fontWeight: 700 }}>{tk?.a?.slice(0, 2)}</div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>{tk?.a} - {tk?.d}</p>
+              <p style={{ fontSize: 11, color: "#6B7280", margin: 0 }}>{t.prob}</p>
+              <p style={{ fontSize: 10, color: "#9CA3AF", margin: 0 }}>Mecanico: {t.mec}</p>
+            </div>
+          </div>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "0 0 6px" }}>Repuestos</p>
+          {t.parts.map((p, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: "#F9FAFB", borderRadius: 10, padding: "6px 10px", marginBottom: 4 }}>
+              <Dot color={p.st === "needed" ? "#EF4444" : p.st === "ordered" ? "#F59E0B" : "#10B981"} />
+              <span style={{ flex: 1, fontSize: 11 }}>{p.qty}x {p.name}</span>
+              <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: p.st === "needed" ? "#FEE2E2" : p.st === "ordered" ? "#FEF3C7" : "#DCFCE7", color: p.st === "needed" ? "#991b1b" : p.st === "ordered" ? "#92400e" : "#15803d" }}>
+                {p.st === "needed" ? "FALTA" : p.st === "ordered" ? "PEDIDO" : "LISTO"}
+              </span>
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+            <button style={{ background: "#F3F4F6", border: "none", borderRadius: 10, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Repuesto</button>
+            {needed.length > 0 && ["Callao", "Valencia", "Pto Ordaz"].map(c => (
+              <button key={c} style={{ background: "#059669", color: "white", border: "none", borderRadius: 10, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                <IconSend s={10} /> {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      ); })}
+    </div>
+  );
+
+  /* ── MAS PAGE ── */
+  /* ── NOMINA SUBPAGE ── */
+  if (page === "nomina") {
+    const choferes = [
+      { n: "RICHARD", a: "R400", c: "#15803d", pay: 690, det: { "Charlie Richard": 240, "Fosforito": 90, "Nuevo Callao": 280, "Sosa Mendez": 55, "La Garrapata": 25 } },
+      { n: "JOAQUIN", a: "R400 Jq", c: "#3f6212", pay: 620, det: { "Charlie Richard": 240, "Fosforito": 90, "Nuevo Callao": 60, "Sosa Mendez": 30, "La Garrapata": 120, "Hrs int.": 80 } },
+      { n: "KHELTY", a: "DM800", c: "#7c3aed", pay: 580, det: { "Charlie Richard": 240, "Fosforito": 90, "Nuevo Callao": 80, "Sosa Mendez": 44, "La Garrapata": 120, "Hrs int.": 6 } },
+      { n: "NAUDY", a: "R600 Am.", c: "#a16207", pay: 530, det: { "Fosforito": 60, "Nuevo Callao": 80, "Charlie Richard": 180, "Sosa Mendez": 55, "La Garrapata": 90, "Hrs int.": 65 } },
+      { n: "GUSTAVO", a: "JAC", c: "#dc2626", pay: 510, det: { "Fosforito": 90, "Charlie Richard": 180, "La Garrapata": 120, "Sosa Mendez": 120 } },
+      { n: "JOHAN", a: "R600 Bl.", c: "#0d9488", pay: 490, det: { "Fosforito": 60, "Nuevo Callao": 80, "Charlie Richard": 180, "Sosa Mendez": 44, "La Garrapata": 120, "Hrs int.": 6 } },
+      { n: "ESNALDO", a: "Iveco", c: "#0891b2", pay: 450, det: { "Fosforito": 90, "Nuevo Callao": 40, "Charlie Richard": 120, "Sosa Mendez": 100, "La Garrapata": 100 } },
+      { n: "MICHEL", a: "DM 600", c: "#c2410c", pay: 440, det: { "Nuevo Callao": 60, "Charlie Richard": 120, "Sosa Mendez": 33, "La Garrapata": 120, "Hrs int.": 107 } },
+      { n: "MARCOS", a: "Fiat Ma.", c: "#57534e", pay: 380, det: { "Fosforito": 60, "Nuevo Callao": 80, "Charlie Richard": 150, "Sosa Mendez": 44, "La Garrapata": 40, "Hrs int.": 6 } },
+      { n: "AMANDIO", a: "R600 Rj", c: "#1e40af", pay: 350, det: { "Nuevo Callao": 40, "Charlie Richard": 210, "Sosa Mendez": 55, "La Garrapata": 30, "Hrs int.": 15 } },
+    ];
+    const fijos = [{ n: "JHONNY (Mec.)", pay: 500 }, { n: "MAURO (Mec.)", pay: 300 }, { n: "FERNANDO (Admin)", pay: 450 }, { n: "CAUCHERO", pay: 70 }];
+    const total = choferes.reduce((s, c) => s + c.pay, 0) + fijos.reduce((s, f) => s + f.pay, 0);
+    return (<div>
+      <button onClick={() => setPage("mas")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Nomina - {$(total)}</h2>
+      <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 12px" }}>Choferes por viaje + sueldos fijos</p>
+      {choferes.map((c, i) => (<div key={i} style={{ background: "white", borderRadius: 14, border: "1px solid #F3F4F6", padding: 10, marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 28, height: 28, borderRadius: 7, background: c.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 7, fontWeight: 700 }}>{c.n.slice(0, 2)}</div><div style={{ flex: 1 }}><p style={{ fontWeight: 600, fontSize: 12, margin: 0 }}>{c.n}</p><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{c.a}</p></div><span style={{ fontWeight: 700, fontSize: 13 }}>{$(c.pay)}</span></div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>{Object.entries(c.det).map(([k, v]) => <span key={k} style={{ fontSize: 9, background: "#F3F4F6", borderRadius: 6, padding: "2px 6px" }}>{k}: {$(v)}</span>)}</div>
+      </div>))}
+      <p style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "12px 0 6px" }}>Sueldos fijos</p>
+      {fijos.map((f, i) => (<div key={i} style={{ display: "flex", justifyContent: "space-between", background: "white", borderRadius: 10, border: "1px solid #F3F4F6", padding: "8px 12px", marginBottom: 4 }}><span style={{ fontSize: 12, fontWeight: 500 }}>{f.n}</span><span style={{ fontSize: 12, fontWeight: 700 }}>{$(f.pay)}</span></div>))}
+    </div>);
+  }
+
+  /* ── FIADOS SUBPAGE (INTERACTIVE) ── */
+  if (page === "fiados") {
+    const totalP = fiadosData.reduce((s, f) => s + (f.am - f.pd), 0);
+    const doAbono = (id) => {
+      const am = parseFloat(payAm);
+      if (!am || am <= 0) return;
+      setFiadosData(prev => prev.map(f => {
+        if (f.id !== id) return f;
+        const newPd = Math.min(f.am, f.pd + am);
+        return { ...f, pd: newPd, pagos: [...f.pagos, { am, dt: payDt, met: payMet }] };
+      }));
+      setPayForm(null); setPayAm(""); setPayDt("27/03"); setPayMet("cash");
+    };
+    const pend = fiadosData.filter(f => f.pd < f.am);
+    const done = fiadosData.filter(f => f.pd >= f.am);
+    return (<div>
+      <button onClick={() => setPage("mas")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}><h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Fiados / Creditos</h2><button style={{ background: "#EA580C", color: "white", border: "none", borderRadius: 10, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Nuevo</button></div>
+      <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "8px 12px", marginBottom: 12, fontSize: 11, color: "#92400e" }}>NO afectan caja hasta que los pagues</div>
+      <div style={{ background: "#FFF7ED", borderRadius: 20, padding: 14, textAlign: "center", marginBottom: 12 }}><p style={{ fontSize: 10, color: "#C2410C", margin: 0 }}>Total por pagar</p><p style={{ fontSize: 22, fontWeight: 700, color: "#C2410C", margin: 0 }}>{$(totalP)}</p><p style={{ fontSize: 10, color: "#9CA3AF", margin: 0 }}>{pend.length} creditos activos</p></div>
+
+      {pend.map(f => { const rest = f.am - f.pd; const pct = f.am > 0 ? f.pd / f.am * 100 : 0; const tk = gt(f.p); return (
+        <div key={f.id} style={{ background: "white", borderRadius: 16, border: "1px solid #F3F4F6", padding: 12, marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+            <div><p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>{f.prov}</p><p style={{ fontSize: 10, color: "#6B7280", margin: 0 }}>{f.desc}</p></div>
+            <div style={{ textAlign: "right" }}><p style={{ fontWeight: 700, fontSize: 13, color: "#C2410C", margin: 0 }}>{$(rest)}</p><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>de {$(f.am)}</p></div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, fontSize: 10 }}>
+            {tk && <span style={{ display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 12, height: 12, borderRadius: 3, background: tk.c, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 6, fontWeight: 700 }}>{tk.a.slice(0,2)}</span>{tk.a}</span>}
+            <span style={{ color: "#9CA3AF" }}>Vence: {f.vence}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: "#FEF3C7", color: "#92400e" }}>{f.cuotas > 1 ? f.cuotas + " cuotas" : "1 pago"}</span>
+          </div>
+          <div style={{ height: 5, background: "#F3F4F6", borderRadius: 3, marginBottom: 6 }}><div style={{ height: "100%", borderRadius: 3, background: "#EA580C", width: pct + "%", transition: "width 0.3s" }} /></div>
+
+          {/* Payment history */}
+          {f.pagos.length > 0 && <div style={{ marginBottom: 8 }}>
+            <p style={{ fontSize: 9, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", margin: "0 0 4px" }}>Abonos realizados</p>
+            {f.pagos.map((pg, pi) => (
+              <div key={pi} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 8px", background: "#F0FDF4", borderRadius: 8, marginBottom: 3, fontSize: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981", display: "inline-block" }} />
+                  <span style={{ color: "#6B7280" }}>{pg.dt}</span>
+                </div>
+                <span style={{ fontWeight: 600, color: "#059669" }}>{$(pg.am)}</span>
+                <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: pg.met === "usdt" ? "#DBEAFE" : "#F3F4F6", color: pg.met === "usdt" ? "#1D4ED8" : "#374151", fontWeight: 600 }}>{pg.met === "usdt" ? "USDT" : "Cash"}</span>
+              </div>
+            ))}
+          </div>}
+
+          {/* Abonar button or form */}
+          {payForm === f.id ? (
+            <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 12, padding: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#C2410C", margin: "0 0 8px" }}>Registrar abono</p>
+              <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 9, color: "#6B7280", margin: "0 0 3px" }}>Monto ($)</p>
+                  <input type="number" value={payAm} onChange={e => setPayAm(e.target.value)} placeholder="0.00" style={{ width: "100%", border: "1px solid #E5E7EB", borderRadius: 8, padding: "7px 10px", fontSize: 12, boxSizing: "border-box" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 9, color: "#6B7280", margin: "0 0 3px" }}>Fecha</p>
+                  <input value={payDt} onChange={e => setPayDt(e.target.value)} placeholder="27/03" style={{ width: "100%", border: "1px solid #E5E7EB", borderRadius: 8, padding: "7px 10px", fontSize: 12, boxSizing: "border-box" }} />
+                </div>
+              </div>
+              <p style={{ fontSize: 9, color: "#6B7280", margin: "0 0 4px" }}>Metodo de pago</p>
+              <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                <button onClick={() => setPayMet("cash")} style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: payMet === "cash" ? "2px solid #059669" : "1px solid #E5E7EB", background: payMet === "cash" ? "#ECFDF5" : "white", fontSize: 12, fontWeight: payMet === "cash" ? 700 : 400, color: payMet === "cash" ? "#059669" : "#374151", cursor: "pointer" }}>Cash USD</button>
+                <button onClick={() => setPayMet("usdt")} style={{ flex: 1, padding: "7px 0", borderRadius: 8, border: payMet === "usdt" ? "2px solid #2563EB" : "1px solid #E5E7EB", background: payMet === "usdt" ? "#EFF6FF" : "white", fontSize: 12, fontWeight: payMet === "usdt" ? 700 : 400, color: payMet === "usdt" ? "#2563EB" : "#374151", cursor: "pointer" }}>USDT</button>
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => doAbono(f.id)} style={{ flex: 1, background: "#EA580C", color: "white", border: "none", borderRadius: 8, padding: "8px 0", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Confirmar abono</button>
+                <button onClick={() => setPayForm(null)} style={{ background: "#F3F4F6", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 600, color: "#6B7280", cursor: "pointer" }}>X</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => { setPayForm(f.id); setPayAm(""); setPayDt("27/03"); setPayMet("cash"); }} style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 600, color: "#C2410C", cursor: "pointer" }}>Abonar</button>
+          )}
+        </div>); })}
+
+      {/* Paid fiados */}
+      {done.length > 0 && <>
+        <p style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "14px 0 6px" }}>Pagados</p>
+        {done.map(f => (
+          <div key={f.id} style={{ background: "#F9FAFB", borderRadius: 14, padding: 10, marginBottom: 6, opacity: 0.6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div><p style={{ fontSize: 12, fontWeight: 500, margin: 0, textDecoration: "line-through" }}>{f.prov} - {f.desc}</p>
+                {f.pagos.length > 0 && <p style={{ fontSize: 9, color: "#6B7280", margin: "2px 0 0" }}>Ultimo pago: {f.pagos[f.pagos.length-1].dt} ({f.pagos[f.pagos.length-1].met === "usdt" ? "USDT" : "Cash"})</p>}
+              </div>
+              <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#DCFCE7", color: "#15803d" }}>PAGADO</span>
+            </div>
+          </div>
+        ))}
+      </>}
+    </div>);
+  }
+
+  /* ── PRESTAMOS SUBPAGE ── */
+  if (page === "prestamos") {
+    const loans = [{ who: "MIGUELON", am: 550, pd: 100 }, { who: "KHELTY", am: 830, pd: 230 }, { who: "MICHEL", am: 50, pd: 0 }];
+    const totalP = loans.reduce((s, l) => s + (l.am - l.pd), 0);
+    return (<div>
+      <button onClick={() => setPage("mas")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}><h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Prestamos - {$(totalP)}</h2><button style={{ background: "#2563EB", color: "white", border: "none", borderRadius: 10, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Nuevo</button></div>
+      {loans.map((l, i) => { const rest = l.am - l.pd; const pct = l.am > 0 ? l.pd / l.am * 100 : 0; return (
+        <div key={i} style={{ background: "white", borderRadius: 16, border: "1px solid #F3F4F6", padding: 12, marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}><p style={{ fontWeight: 700, fontSize: 13, margin: 0 }}>{l.who}</p><p style={{ fontWeight: 700, fontSize: 13, color: "#2563EB", margin: 0 }}>{$(rest)}</p></div>
+          <div style={{ height: 5, background: "#F3F4F6", borderRadius: 3, marginBottom: 8 }}><div style={{ height: "100%", borderRadius: 3, background: "#3B82F6", width: pct + "%" }} /></div>
+          <button style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "6px 12px", fontSize: 11, fontWeight: 600, color: "#1D4ED8", cursor: "pointer" }}>Abonar</button>
+        </div>); })}
+    </div>);
+  }
+
+  /* ── CAJA SUBPAGE ── */
+  if (page === "caja") {
+    const movs = [
+      { dt: "15/02", tp: "in", met: "usdt", am: 20000, d: "Cobro Aurumin" },
+      { dt: "15/02", tp: "out", met: "cash", am: 2740, d: "Nomina choferes" },
+      { dt: "15/02", tp: "out", met: "cash", am: 2855, d: "C.C. Jose R." },
+      { dt: "10/02", tp: "out", met: "usdt", am: 220, d: "Pasadores R20" },
+      { dt: "10/02", tp: "out", met: "cash", am: 145, d: "Paila SAE50" },
+    ];
+    return (<div>
+      <button onClick={() => setPage("mas")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}><h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Caja</h2><button style={{ background: AC, color: "white", border: "none", borderRadius: 10, padding: "6px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ Movimiento</button></div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+        <div style={{ background: "#ECFDF5", borderRadius: 16, padding: 10, textAlign: "center" }}><p style={{ fontSize: 9, color: "#059669", margin: 0 }}>Efectivo</p><p style={{ fontSize: 16, fontWeight: 700, color: "#059669", margin: 0 }}>$8,405</p></div>
+        <div style={{ background: "#EFF6FF", borderRadius: 16, padding: 10, textAlign: "center" }}><p style={{ fontSize: 9, color: "#2563EB", margin: 0 }}>USDT</p><p style={{ fontSize: 16, fontWeight: 700, color: "#2563EB", margin: 0 }}>$17,200</p></div>
+        <div style={{ background: "#111827", borderRadius: 16, padding: 10, textAlign: "center" }}><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>Total</p><p style={{ fontSize: 16, fontWeight: 700, color: "white", margin: 0 }}>$25,605</p></div>
+      </div>
+      {movs.map((m, i) => (<div key={i} style={{ background: "white", borderRadius: 14, border: "1px solid #F3F4F6", padding: "8px 12px", marginBottom: 5, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: m.tp === "in" ? "#059669" : "#EF4444", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>{m.tp === "in" ? "+" : "-"}</div>
+        <div style={{ flex: 1 }}><p style={{ fontSize: 12, fontWeight: 500, margin: 0 }}>{m.d}</p><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{m.dt} - {m.met === "cash" ? "Cash" : "USDT"}</p></div>
+        <p style={{ fontWeight: 700, fontSize: 12, color: m.tp === "in" ? "#059669" : "#DC2626", margin: 0 }}>{$(m.am)}</p>
+      </div>))}
+    </div>);
+  }
+
+  /* ── DEUDA SUBPAGE ── */
+  if (page === "deuda") {
+    const periodos = [
+      { p: "Acum. 2025", f: 48792.40, a: 0, s: 48792.40 },
+      { p: "1ra Q Ene-26", f: 5562.73, a: 28000, s: 26355.13 },
+      { p: "2da Q Ene-26", f: 15816.18, a: 13000, s: 29171.31 },
+      { p: "1ra Q Feb-26", f: 11638.26, a: 20000, s: 20809.57 },
+    ];
+    return (<div>
+      <button onClick={() => setPage("mas")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Deuda Aurumin</h2>
+      <div style={{ background: "#FEF2F2", borderRadius: 20, padding: 14, textAlign: "center", marginBottom: 14 }}><p style={{ fontSize: 24, fontWeight: 700, color: "#DC2626", margin: 0 }}>$20,809.57</p><p style={{ fontSize: 10, color: "#EF4444", margin: 0 }}>Acumulado</p></div>
+      <div style={{ background: "white", borderRadius: 16, border: "1px solid #E5E7EB", overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1.5fr 1.5fr 1.5fr", background: "#F9FAFB", padding: "6px 10px" }}><span style={{ fontSize: 9, fontWeight: 700, color: "#6B7280" }}>Periodo</span><span style={{ fontSize: 9, fontWeight: 700, color: "#6B7280", textAlign: "right" }}>Factura</span><span style={{ fontSize: 9, fontWeight: 700, color: "#6B7280", textAlign: "right" }}>Abono</span><span style={{ fontSize: 9, fontWeight: 700, color: "#6B7280", textAlign: "right" }}>Saldo</span></div>
+        {periodos.map((p, i) => (<div key={i} style={{ display: "grid", gridTemplateColumns: "2.5fr 1.5fr 1.5fr 1.5fr", padding: "6px 10px", borderTop: "1px solid #F3F4F6" }}><span style={{ fontSize: 10 }}>{p.p}</span><span style={{ fontSize: 10, textAlign: "right" }}>{$(p.f)}</span><span style={{ fontSize: 10, textAlign: "right", color: p.a ? "#059669" : "#9CA3AF" }}>{p.a ? $(p.a) : "-"}</span><span style={{ fontSize: 10, textAlign: "right", fontWeight: 700, color: "#DC2626" }}>{$(p.s)}</span></div>))}
+      </div>
+    </div>);
+  }
+
+  /* ── RELACION SUBPAGE ── */
+  if (page === "relacion") {
+    const rel = [
+      { a: "R400", d: "RICHARD", c: "#15803d", fac: 2189, ded: 890, sal: 1299, af: false },
+      { a: "R400 Jq", d: "JOAQUIN", c: "#3f6212", fac: 1972, ded: 817, sal: 1155, af: true },
+      { a: "DM800", d: "KHELTY", c: "#7c3aed", fac: 1925, ded: 885, sal: 1040, af: false },
+      { a: "R600 Bl.", d: "JOHAN", c: "#0d9488", fac: 1871, ded: 830, sal: 1041, af: false },
+      { a: "R600 Am.", d: "NAUDY", c: "#a16207", fac: 1776, ded: 790, sal: 986, af: false },
+      { a: "DM 600", d: "MICHEL", c: "#c2410c", fac: 1566, ded: 720, sal: 846, af: false },
+      { a: "JAC Gallop", d: "GUSTAVO", c: "#dc2626", fac: 1413, ded: 680, sal: 733, af: false },
+      { a: "R600 Rj", d: "AMANDIO", c: "#1e40af", fac: 1406, ded: 535, sal: 871, af: true },
+      { a: "Iveco 330", d: "ESNALDO", c: "#0891b2", fac: 1340, ded: 650, sal: 690, af: false },
+      { a: "Fiat Ma.", d: "MARCOS", c: "#57534e", fac: 1170, ded: 530, sal: 640, af: true },
+      { a: "Fiat Ed.", d: "EDUARDO", c: "#be185d", fac: 1125, ded: 480, sal: 645, af: true },
+      { a: "Sinotruk", d: "MIGUEL", c: "#1d4ed8", fac: 920, ded: 510, sal: 410, af: false },
+      { a: "R400 La", d: "LARRY", c: "#92400e", fac: 712, ded: 350, sal: 362, af: true },
+    ];
+    return (<div>
+      <button onClick={() => setPage("mas")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Relacion por camion</h2>
+      {rel.map((r, i) => (<div key={i} style={{ background: "white", borderRadius: 14, border: "1px solid #F3F4F6", padding: 10, marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: r.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 8, fontWeight: 700, flexShrink: 0 }}>{r.a.slice(0, 2)}</div>
+          <div style={{ flex: 1 }}><div style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ fontWeight: 700, fontSize: 11 }}>{r.a}</span>{r.af && <span style={{ fontSize: 7, fontWeight: 700, padding: "1px 4px", borderRadius: 3, background: "#FEF3C7", color: "#92400e" }}>AF</span>}</div><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{r.d} - Fac: {$(r.fac)}</p></div>
+          <p style={{ fontWeight: 700, fontSize: 13, color: r.sal >= 0 ? "#059669" : "#DC2626", margin: 0 }}>{$(r.sal)}</p>
+        </div>
+      </div>))}
+    </div>);
+  }
+
+  /* ── DESPACHO / ROTACION ── */
+  if (page === "despacho") {
+    const mineQueues = [
+      { mine: "Fosforito", rate: "$3/ton", demand: 8, assigned: [
+        { a: "R400", d: "RICHARD", c: "#15803d", lastTrip: "Hace 2h", trips: 2 },
+        { a: "DM800", d: "KHELTY", c: "#7c3aed", lastTrip: "Hace 3h", trips: 2 },
+        { a: "R400 Jq", d: "JOAQUIN", c: "#3f6212", lastTrip: "Hace 1h", trips: 3 },
+      ]},
+      { mine: "Nuevo Callao", rate: "$7/ton", demand: 4, assigned: [
+        { a: "R600 Am.", d: "NAUDY", c: "#a16207", lastTrip: "Hace 4h", trips: 1 },
+        { a: "Fiat Ed.", d: "EDUARDO", c: "#be185d", lastTrip: "Hace 5h", trips: 0 },
+      ]},
+      { mine: "Charlie Richard", rate: "$3/ton", demand: 6, assigned: []},
+      { mine: "Sosa Mendez", rate: "$3.5/ton", demand: 3, assigned: []},
+    ];
+    const available = [
+      { a: "DM 600", d: "MICHEL", c: "#c2410c", lastMine: "Fosforito", lastH: "45min" },
+      { a: "R600 Bl.", d: "JOHAN", c: "#0d9488", lastMine: "Callao", lastH: "2h" },
+      { a: "Iveco 330", d: "ESNALDO", c: "#0891b2", lastMine: "Sosa", lastH: "1h" },
+      { a: "Fiat Ma.", d: "MARCOS", c: "#57534e", lastMine: "Charlie", lastH: "3h" },
+      { a: "R600 Rj", d: "AMANDIO", c: "#1e40af", lastMine: "Garrapata", lastH: "6h" },
+      { a: "Sinotruk", d: "MIGUEL", c: "#1d4ed8", lastMine: "Fosforito", lastH: "4h" },
+    ];
+    return (<div>
+      <button onClick={() => setPage("home")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Despacho</h2>
+      <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 14px" }}>Asigna camiones a las minas - arrastra o toca para mover</p>
+
+      <p style={{ fontSize: 10, fontWeight: 700, color: "#059669", textTransform: "uppercase", margin: "0 0 6px" }}>Disponibles ({available.length})</p>
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 14, WebkitOverflowScrolling: "touch" }}>
+        {available.map((t, i) => (
+          <div key={i} style={{ background: "white", border: "1px solid #F3F4F6", borderRadius: 12, padding: "8px 10px", minWidth: 100, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: t.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 7, fontWeight: 700 }}>{t.a.slice(0, 2)}</div>
+              <span style={{ fontSize: 11, fontWeight: 600 }}>{t.a}</span>
+            </div>
+            <p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{t.d} - Ult: {t.lastMine}</p>
+            <p style={{ fontSize: 9, color: "#6B7280", margin: 0 }}>Hace {t.lastH}</p>
+          </div>
+        ))}
+      </div>
+
+      {mineQueues.map((mq, i) => (
+        <div key={i} style={{ marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <div><p style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>{mq.mine}</p><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{mq.rate} - Necesita {mq.demand} viajes</p></div>
+            <span style={{ fontSize: 10, fontWeight: 600, color: mq.assigned.length >= mq.demand / 2 ? "#059669" : "#DC2626", background: mq.assigned.length >= mq.demand / 2 ? "#ECFDF5" : "#FEF2F2", padding: "3px 8px", borderRadius: 6 }}>{mq.assigned.length} asignados</span>
+          </div>
+          {mq.assigned.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {mq.assigned.map((t, j) => (
+                <div key={j} style={{ background: "white", border: "1px solid #DCFCE7", borderRadius: 10, padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, background: t.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 7, fontWeight: 700 }}>{t.a.slice(0, 2)}</div>
+                  <div style={{ flex: 1 }}><span style={{ fontSize: 11, fontWeight: 600 }}>{t.a}</span><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{t.d} - {t.lastTrip} - {t.trips}v hoy</p></div>
+                  <button style={{ fontSize: 9, color: "#DC2626", background: "#FEF2F2", border: "none", borderRadius: 6, padding: "3px 8px", fontWeight: 600, cursor: "pointer" }}>Quitar</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ background: "#F9FAFB", border: "1px dashed #D1D5DB", borderRadius: 10, padding: 14, textAlign: "center" }}>
+              <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>Toca un camion disponible para asignar</p>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <div style={{ background: "#F0F9FF", border: "1px solid #BAE6FD", borderRadius: 14, padding: 12, marginTop: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 600, color: "#0369A1", margin: "0 0 4px" }}>Como funciona:</p>
+        <p style={{ fontSize: 10, color: "#6B7280", margin: 0, lineHeight: 1.6 }}>
+          Los camiones disponibles aparecen arriba. Tocas uno y lo asignas a la mina que necesite. La app sugiere basandose en: ultimo viaje, tiempo sin ir a esa mina, y demanda del dia. Cuando la mina confirma carga, tocas "Despachar" y el viaje se registra automatico.
+        </p>
+      </div>
+    </div>);
+  }
+
+  /* ── RESUMEN WHATSAPP ── */
+  if (page === "whatsapp") {
+    const msg = `*TRANSPORTE JOSE RODRIGUEZ*\n*Resumen 15/Feb/2026*\n\n*Flota:* 9 activos / 1 taller / 3 parados\n*Facturacion hoy:* $1,866\n*Acumulado quincena:* $19,395\n\n*Por mina:*\nFosforito: 8 viajes ($720)\nNuevo Callao: 4 viajes ($558)\nCharlie Richard: 3 viajes ($294)\nSosa Mendez: 2 viajes ($294)\n\n*En taller:*\nJAC Gallop (Gustavo) - Frenos\nFalta: Bandas freno delanteras\n\n*Alertas:*\nAmandio - 2 dias sin viajes\nSinotruk - 3 dias parado\n\n*Caja:* $8,405 cash + $17,200 USDT\n*Deuda Aurumin:* $20,809`;
+    return (<div>
+      <button onClick={() => setPage("mas")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Resumen diario</h2>
+      <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 14px" }}>Se genera automatico cada dia a las 6pm</p>
+
+      <div style={{ background: "#DCF8C6", borderRadius: 16, padding: 14, fontFamily: "monospace", fontSize: 11, lineHeight: 1.6, whiteSpace: "pre-wrap", color: "#1F2937", marginBottom: 12 }}>{msg.replace(/\*/g, "").replace(/\\n/g, "\n")}</div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <button style={{ flex: 1, background: "#25D366", color: "white", border: "none", borderRadius: 12, padding: "12px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <IconSend s={14} /> Enviar a Jose R.
+        </button>
+        <button style={{ background: "#F3F4F6", border: "none", borderRadius: 12, padding: "12px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Editar</button>
+      </div>
+
+      <p style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "0 0 6px" }}>Tambien enviar a:</p>
+      {["Leo R. (Socio)", "Carlos R. (Socio)", "Hnos Neto (Socio)"].map((n, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", border: "1px solid #F3F4F6", borderRadius: 10, padding: "8px 12px", marginBottom: 4 }}>
+          <span style={{ fontSize: 12 }}>{n}</span>
+          <button style={{ background: "#ECFDF5", border: "none", borderRadius: 8, padding: "4px 10px", fontSize: 10, fontWeight: 600, color: "#059669", cursor: "pointer" }}>Enviar</button>
+        </div>
+      ))}
+
+      <div style={{ background: "#F0F9FF", border: "1px solid #BAE6FD", borderRadius: 14, padding: 12, marginTop: 12 }}>
+        <p style={{ fontSize: 11, fontWeight: 600, color: "#0369A1", margin: "0 0 4px" }}>Automatizable:</p>
+        <p style={{ fontSize: 10, color: "#6B7280", margin: 0, lineHeight: 1.6 }}>
+          En produccion, este resumen se envia solo cada dia a las 6pm. Jose R. y los socios reciben su resumen por WhatsApp sin que Fernando haga nada. Tambien puede enviarse manualmente en cualquier momento.
+        </p>
+      </div>
+    </div>);
+  }
+
+  /* ── COMPARACION QUINCENAL ── */
+  if (page === "comparar") {
+    const comp = [
+      { l: "Facturacion total", curr: 19395, prev: 25470, fmt: "$" },
+      { l: "Viajes totales", curr: 179, prev: 304, fmt: "" },
+      { l: "Toneladas", curr: 4342, prev: 7271, fmt: "t" },
+      { l: "Camiones activos", curr: 9, prev: 12, fmt: "" },
+      { l: "Gastos operativos", curr: 1560, prev: 2340, fmt: "$", inv: true },
+    ];
+    const truckComp = [
+      { a: "R400", c: "#15803d", curr: 2189, prev: 1637 },
+      { a: "R400 Jq", c: "#3f6212", curr: 1972, prev: 2777 },
+      { a: "DM800", c: "#7c3aed", curr: 1925, prev: 2430 },
+      { a: "R600 Bl.", c: "#0d9488", curr: 1871, prev: 3437 },
+      { a: "R600 Am.", c: "#a16207", curr: 1776, prev: 1911 },
+      { a: "DM 600", c: "#c2410c", curr: 1566, prev: 2188 },
+      { a: "JAC Gallop", c: "#dc2626", curr: 1413, prev: 0 },
+      { a: "R600 Rj", c: "#1e40af", curr: 1406, prev: 2435 },
+      { a: "Iveco 330", c: "#0891b2", curr: 1340, prev: 0 },
+      { a: "Fiat Ma.", c: "#57534e", curr: 1170, prev: 3249 },
+    ];
+    return (<div>
+      <button onClick={() => setPage("mas")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Comparacion quincenal</h2>
+      <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 14px" }}>1ra Q Feb vs 2da Q Feb 2026</p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
+        {comp.map((c, i) => { const diff = c.curr - c.prev; const pct = c.prev > 0 ? Math.round((diff / c.prev) * 100) : 100; const up = c.inv ? diff < 0 : diff > 0; return (
+          <div key={i} style={{ background: "white", borderRadius: 14, border: "1px solid #F3F4F6", padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 11, color: "#6B7280", margin: 0 }}>{c.l}</p>
+              <p style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{c.fmt === "$" ? $(c.curr) : c.curr.toLocaleString() + c.fmt}</p>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: up ? "#059669" : "#DC2626" }}>{up ? "+" : ""}{pct}%</span>
+              <p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>Ant: {c.fmt === "$" ? $(c.prev) : c.prev.toLocaleString() + c.fmt}</p>
+            </div>
+          </div>
+        ); })}
+      </div>
+
+      <p style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "0 0 8px" }}>Por camion</p>
+      {truckComp.map((t, i) => { const diff = t.prev > 0 ? Math.round(((t.curr - t.prev) / t.prev) * 100) : 100; const up = diff > 0; return (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid #F9FAFB" }}>
+          <div style={{ width: 22, height: 22, borderRadius: 6, background: t.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 7, fontWeight: 700 }}>{t.a.slice(0, 2)}</div>
+          <span style={{ flex: 1, fontSize: 11, fontWeight: 500 }}>{t.a}</span>
+          <span style={{ fontSize: 11, fontWeight: 700 }}>{$(t.curr)}</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: up ? "#059669" : "#DC2626", minWidth: 42, textAlign: "right" }}>{t.prev > 0 ? (up ? "+" : "") + diff + "%" : "NUEVO"}</span>
+        </div>
+      ); })}
+    </div>);
+  }
+
+  /* ── TCO (COSTO TOTAL POR CAMION) ── */
+  if (page === "tco") {
+    const tco = [
+      { a: "R400", c: "#15803d", d: "RICHARD", rev: 6800, exp: 890, mant: 320, net: 5590, months: 3, ratio: 7.6 },
+      { a: "DM800", c: "#7c3aed", d: "KHELTY", rev: 6200, exp: 1450, mant: 680, net: 4070, months: 3, ratio: 4.3 },
+      { a: "R600 Am.", c: "#a16207", d: "NAUDY", rev: 5800, exp: 760, mant: 290, net: 4750, months: 3, ratio: 7.6 },
+      { a: "R400 Jq", c: "#3f6212", d: "JOAQUIN", rev: 5500, exp: 490, mant: 90, net: 4920, months: 3, ratio: 11.2 },
+      { a: "R600 Bl.", c: "#0d9488", d: "JOHAN", rev: 5600, exp: 1100, mant: 540, net: 3960, months: 3, ratio: 5.1 },
+      { a: "DM 600", c: "#c2410c", d: "MICHEL", rev: 4800, exp: 1620, mant: 980, net: 2200, months: 3, ratio: 3.0 },
+      { a: "R600 Rj", c: "#1e40af", d: "AMANDIO", rev: 4200, exp: 385, mant: 85, net: 3730, months: 3, ratio: 10.9 },
+      { a: "Fiat Ma.", c: "#57534e", d: "MARCOS", rev: 3800, exp: 930, mant: 330, net: 2540, months: 3, ratio: 4.1 },
+      { a: "JAC Gallop", c: "#dc2626", d: "GUSTAVO", rev: 2800, exp: 1200, mant: 850, net: 750, months: 2, ratio: 2.3 },
+      { a: "R400 La", c: "#92400e", d: "LARRY", rev: 2100, exp: 520, mant: 150, net: 1430, months: 3, ratio: 4.0 },
+    ];
+    const maxRev = Math.max(...tco.map(t => t.rev));
+    return (<div>
+      <button onClick={() => setPage("mas")} style={{ fontSize: 12, color: AC, background: "none", border: "none", fontWeight: 600, marginBottom: 12, cursor: "pointer", padding: 0 }}>{"< Volver"}</button>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Costo total por camion</h2>
+      <p style={{ fontSize: 11, color: "#9CA3AF", margin: "0 0 14px" }}>Ultimos 3 meses - Ingresos vs gastos + mantenimiento</p>
+
+      {tco.map((t, i) => {
+        const expPct = t.rev > 0 ? ((t.exp + t.mant) / t.rev * 100) : 0;
+        const isRisk = t.ratio < 3.5;
+        return (
+        <div key={i} style={{ background: "white", borderRadius: 14, border: isRisk ? "1.5px solid #FCA5A5" : "1px solid #F3F4F6", padding: 10, marginBottom: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 7, background: t.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 7, fontWeight: 700 }}>{t.a.slice(0, 2)}</div>
+            <div style={{ flex: 1 }}><span style={{ fontSize: 12, fontWeight: 700 }}>{t.a}</span><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{t.d} - {t.months} meses</p></div>
+            <div style={{ textAlign: "right" }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: t.net > 0 ? "#059669" : "#DC2626", margin: 0 }}>{$(t.net)}</p>
+              <p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>neto</p>
+            </div>
+          </div>
+          <div style={{ display: "flex", height: 14, borderRadius: 4, overflow: "hidden", marginBottom: 4 }}>
+            <div style={{ width: (t.rev / maxRev * 100) + "%", background: "#DCFCE7", position: "relative" }}>
+              <div style={{ width: expPct + "%", height: "100%", background: "#FCA5A5" }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9 }}>
+            <span style={{ color: "#059669" }}>Ingreso: {$(t.rev)}</span>
+            <span style={{ color: "#DC2626" }}>Gastos: {$(t.exp)} + Mant: {$(t.mant)}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: isRisk ? "#DC2626" : "#059669" }}>Ratio: {t.ratio}x</span>
+            {isRisk && <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: "#FEE2E2", color: "#991b1b" }}>REVISAR</span>}
+            <span style={{ fontSize: 8, color: "#9CA3AF" }}>({Math.round(expPct)}% se va en gastos)</span>
+          </div>
+        </div>);
+      })}
+
+      <div style={{ background: "#F0F9FF", border: "1px solid #BAE6FD", borderRadius: 14, padding: 12, marginTop: 8 }}>
+        <p style={{ fontSize: 11, fontWeight: 600, color: "#0369A1", margin: "0 0 4px" }}>Que significa el ratio:</p>
+        <p style={{ fontSize: 10, color: "#6B7280", margin: 0, lineHeight: 1.6 }}>
+          Ratio = Ingreso / Gastos totales. Un ratio de 7x significa que por cada $1 gastado, el camion genera $7. Menos de 3.5x se marca en rojo: el camion gasta demasiado vs lo que genera. Sirve para decidir si vale la pena seguir reparandolo.
+        </p>
+      </div>
+    </div>);
+  }
+
+  /* ── MAS MENU ── */
+  if (page === "mas") {
+    const items = [
+      { id: "despacho", l: "Despacho / Rotacion", d: "Asignar camiones a minas", bg: "#F0FDFA", c: "#0F766E" },
+      { id: "whatsapp", l: "Resumen WhatsApp", d: "Enviar resumen diario a Jose R.", bg: "#F0FDF4", c: "#15803d" },
+      { id: "comparar", l: "Comparar quincenas", d: "Esta vs anterior con tendencias", bg: "#EFF6FF", c: "#1D4ED8" },
+      { id: "tco", l: "Costo total camion", d: "Ingresos vs gastos (3 meses)", bg: "#FFF7ED", c: "#C2410C" },
+      { id: "nomina", l: "Nomina", d: "Choferes + sueldos fijos", bg: "#EEF2FF", c: "#4338CA" },
+      { id: "fiados", l: "Fiados / Creditos", d: "Compras a credito (no afectan caja)", bg: "#FEF3C7", c: "#92400e" },
+      { id: "prestamos", l: "Prestamos", d: "Control y abonos a trabajadores", bg: "#DBEAFE", c: "#1E40AF" },
+      { id: "caja", l: "Caja (Cash + USDT)", d: "Balance efectivo y cripto", bg: "#ECFDF5", c: "#059669" },
+      { id: "deuda", l: "Deuda Aurumin", d: "Historial acumulado con abonos", bg: "#FEF2F2", c: "#DC2626" },
+      { id: "relacion", l: "Relacion por camion", d: "P&L automatico por vehiculo", bg: "#F0FDF4", c: "#15803d" },
+    ];
+    return (
+      <div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 16px" }}>Mas opciones</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {items.map(item => (
+            <div key={item.id} onClick={() => setPage(item.id)} style={{ background: item.bg, borderRadius: 16, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+              <div style={{ flex: 1 }}><p style={{ fontWeight: 700, fontSize: 13, color: item.c, margin: 0 }}>{item.l}</p><p style={{ fontSize: 10, color: "#6B7280", margin: 0 }}>{item.d}</p></div>
+              <IconChev c={item.c} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── HOME (default) ── */
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Tablero del dia</h2>
+        <p style={{ fontSize: 12, color: "#9CA3AF", margin: 0 }}>15 Febrero 2026 - 13 camiones</p>
+      </div>
+
+      {pendP > 0 && <div onClick={() => setPage("taller")} style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, marginBottom: 10, cursor: "pointer" }}>
+        <IconAlert /><span style={{ fontSize: 12, fontWeight: 600, color: "#DC2626", flex: 1 }}>{pendP} repuestos pendientes por comprar</span><IconChev />
+      </div>}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
+        {[
+          { v: BOARD.filter(b => b.st === "activo").length, l: "Activos", bg: "#ECFDF5", c: "#059669" },
+          { v: BOARD.filter(b => b.st === "inactivo" || b.st === "espera").length, l: "Parados", bg: "#FEF3C7", c: "#D97706" },
+          { v: "1,866", l: "$ Hoy", bg: "#EFF6FF", c: "#2563EB" },
+          { v: "19.4k", l: "$ Quinc.", bg: "#F3F4F6", c: "#374151" },
+        ].map((k, i) => (
+          <div key={i} style={{ background: k.bg, borderRadius: 16, padding: "8px 4px", textAlign: "center" }}>
+            <p style={{ fontSize: 17, fontWeight: 700, color: k.c, margin: 0 }}>{k.v}</p>
+            <p style={{ fontSize: 8, color: "#6B7280", margin: 0 }}>{k.l}</p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 14, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <IconDollar s={14} c="#D97706" /><span style={{ fontSize: 11, fontWeight: 600, color: "#B45309", flex: 1 }}>Fiados pendientes: $2,291.00</span>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {sorted.map(b => (
+          <div key={b.p} style={{ background: "white", borderRadius: 14, border: "1px solid #F3F4F6", padding: "8px 10px", opacity: b.st === "inactivo" ? 0.5 : 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: b.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 8, fontWeight: 700, flexShrink: 0 }}>{b.a.slice(0, 2)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ fontWeight: 700, fontSize: 11 }}>{b.a}</span>
+                  <span style={{ fontSize: 7, fontWeight: 700, padding: "1px 4px", borderRadius: 3, background: stC[b.st].bg, color: stC[b.st].c }}>{b.st === "activo" ? b.tT + "v" : b.st.toUpperCase()}</span>
+                  {b.t === "A" && <span style={{ fontSize: 7, fontWeight: 700, padding: "1px 4px", borderRadius: 3, background: "#FEF3C7", color: "#92400e" }}>AF</span>}
+                </div>
+                <p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{b.d} - {b.o} - {b.aT}v</p>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                {b.tR > 0 && <p style={{ fontWeight: 700, fontSize: 11, color: "#059669", margin: 0 }}>+{$(b.tR)}</p>}
+                <p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{$(b.aR)}</p>
+              </div>
+            </div>
+            <div style={{ height: 3, background: "#F3F4F6", borderRadius: 2, marginTop: 4 }}><div style={{ height: "100%", borderRadius: 2, background: b.c, width: (b.aR / maxR * 100) + "%" }} /></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ MECHANIC VIEW ═══ */
+function MechanicView() {
+  const [showForm, setShowForm] = useState(false);
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Taller</h2>
+      <p style={{ fontSize: 12, color: "#9CA3AF", margin: "0 0 16px" }}>Vista mecanico: agrego repuestos que necesito</p>
+      <button style={{ width: "100%", background: "#EF4444", color: "white", border: "none", borderRadius: 16, padding: 14, fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 16 }}>+ Ingresar camion al taller</button>
+      {TIX.map(t => { const tk = gt(t.p); return (
+        <div key={t.id} style={{ background: "white", border: "2px solid #FCA5A5", borderRadius: 20, padding: 16, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: tk?.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 10, fontWeight: 700 }}>{tk?.a?.slice(0, 2)}</div>
+            <div><p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>{tk?.a} - {tk?.d}</p><p style={{ fontSize: 11, color: "#6B7280", margin: 0 }}>{t.prob}</p></div>
+          </div>
+          {t.parts.map((p, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, background: "#F9FAFB", borderRadius: 10, padding: "6px 10px", marginBottom: 4 }}>
+              <Dot color={p.st === "needed" ? "#EF4444" : p.st === "ordered" ? "#F59E0B" : "#10B981"} />
+              <span style={{ flex: 1, fontSize: 11 }}>{p.qty}x {p.name}</span>
+              <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: p.st === "needed" ? "#FEE2E2" : p.st === "ordered" ? "#FEF3C7" : "#DCFCE7", color: p.st === "needed" ? "#991b1b" : p.st === "ordered" ? "#92400e" : "#15803d" }}>
+                {p.st === "needed" ? "FALTA" : p.st === "ordered" ? "PEDIDO" : "LISTO"}
+              </span>
+            </div>
+          ))}
+          <button onClick={() => setShowForm(!showForm)} style={{ marginTop: 8, background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, padding: "8px 14px", fontSize: 12, fontWeight: 600, color: "#DC2626", cursor: "pointer", width: "100%" }}>
+            + Agregar repuesto que necesito
+          </button>
+          {showForm && t.id === "t1" && (
+            <div style={{ marginTop: 8, background: "#FEF2F2", borderRadius: 12, padding: 12 }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                <input defaultValue="Reten de caja" style={{ flex: 1, border: "1px solid #E5E7EB", borderRadius: 10, padding: "8px 12px", fontSize: 12 }} />
+                <input defaultValue="2" style={{ width: 48, border: "1px solid #E5E7EB", borderRadius: 10, padding: "8px 12px", fontSize: 12, textAlign: "center" }} />
+              </div>
+              <button style={{ marginTop: 6, width: "100%", background: "#DC2626", color: "white", border: "none", borderRadius: 10, padding: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                Enviar - Fernando recibe alerta
+              </button>
+            </div>
+          )}
+        </div>
+      ); })}
+      <div style={{ background: "#F0F9FF", border: "1px solid #BAE6FD", borderRadius: 16, padding: 14 }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: "#0369A1", margin: "0 0 4px" }}>Flujo de pedidos:</p>
+        <p style={{ fontSize: 11, color: "#6B7280", margin: 0, lineHeight: 1.6 }}>
+          1. Agrego el repuesto que necesito<br />
+          2. Fernando recibe alerta al instante<br />
+          3. Fernando envia pedido a la tienda por WhatsApp<br />
+          4. Cuando llega, Fernando marca "Llego"
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ VIEWER (DUENO) ═══ */
+function ViewerView() {
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Resumen ejecutivo</h2>
+      <p style={{ fontSize: 12, color: "#9CA3AF", margin: "0 0 16px" }}>1ra Quincena Febrero 2026</p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+        <div style={{ background: "#ECFDF5", borderRadius: 20, padding: 16, textAlign: "center" }}>
+          <p style={{ fontSize: 10, color: "#059669", margin: 0 }}>Facturacion total</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: "#059669", margin: "4px 0" }}>$19,395</p>
+          <p style={{ fontSize: 10, color: "#6B7280", margin: 0 }}>Aurumin $14,571 + Chino $4,824</p>
+        </div>
+        <div style={{ background: "#FEF2F2", borderRadius: 20, padding: 16, textAlign: "center" }}>
+          <p style={{ fontSize: 10, color: "#DC2626", margin: 0 }}>Deuda Aurumin</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: "#DC2626", margin: "4px 0" }}>$20,809</p>
+          <p style={{ fontSize: 10, color: "#6B7280", margin: 0 }}>Acumulado</p>
+        </div>
+      </div>
+
+      <div style={{ background: "white", borderRadius: 20, border: "1px solid #E5E7EB", padding: 16, marginBottom: 16 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "0 0 10px" }}>Balance de caja</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          <div style={{ background: "#ECFDF5", borderRadius: 14, padding: 10, textAlign: "center" }}><p style={{ fontSize: 9, color: "#059669", margin: 0 }}>Efectivo</p><p style={{ fontSize: 16, fontWeight: 700, color: "#059669", margin: 0 }}>$8,405</p></div>
+          <div style={{ background: "#EFF6FF", borderRadius: 14, padding: 10, textAlign: "center" }}><p style={{ fontSize: 9, color: "#2563EB", margin: 0 }}>USDT</p><p style={{ fontSize: 16, fontWeight: 700, color: "#2563EB", margin: 0 }}>$17,200</p></div>
+          <div style={{ background: "#111827", borderRadius: 14, padding: 10, textAlign: "center" }}><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>Total</p><p style={{ fontSize: 16, fontWeight: 700, color: "white", margin: 0 }}>$25,605</p></div>
+        </div>
+      </div>
+
+      <div style={{ background: "white", borderRadius: 20, border: "1px solid #E5E7EB", padding: 16, marginBottom: 16 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "0 0 10px" }}>Flota: 13 camiones</p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 12 }}>
+          <div style={{ textAlign: "center" }}><p style={{ fontSize: 28, fontWeight: 700, color: "#059669", margin: 0 }}>{BOARD.filter(b => b.st === "activo").length}</p><p style={{ fontSize: 10, color: "#6B7280", margin: 0 }}>Activos</p></div>
+          <div style={{ textAlign: "center" }}><p style={{ fontSize: 28, fontWeight: 700, color: "#F59E0B", margin: 0 }}>{BOARD.filter(b => b.st !== "activo").length}</p><p style={{ fontSize: 10, color: "#6B7280", margin: 0 }}>Parados</p></div>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "center" }}>
+          {TK.map(t => { const b = BOARD.find(x => x.p === t.p); return <div key={t.p} style={{ width: 26, height: 26, borderRadius: 6, background: b?.st === "activo" ? t.c : "#E5E7EB", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 6, fontWeight: 700 }}>{t.a.slice(0, 2)}</div>; })}
+        </div>
+      </div>
+
+      <div style={{ background: "white", borderRadius: 20, border: "1px solid #E5E7EB", padding: 16 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "0 0 10px" }}>Top 5 camiones (quincena)</p>
+        {[...BOARD].sort((a, b) => b.aR - a.aR).slice(0, 5).map((t, i) => (
+          <div key={t.p} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#9CA3AF", width: 16 }}>{i + 1}</span>
+            <div style={{ width: 24, height: 24, borderRadius: 6, background: t.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 7, fontWeight: 700 }}>{t.a.slice(0, 2)}</div>
+            <span style={{ flex: 1, fontSize: 12, fontWeight: 500 }}>{t.a} - {t.d}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#059669" }}>{$(t.aR)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ PARTNER VIEW ═══ */
+function PartnerView({ user }) {
+  const partner = PARTNERS[user.pin];
+  if (!partner) return <p style={{ padding: 20, color: "#6B7280" }}>No se encontraron camiones para este usuario.</p>;
+
+  const myTrucks = partner.plates.map(p => {
+    const tk = gt(p);
+    const b = BOARD.find(x => x.p === p);
+    const tl = TIMELINE[p] || [];
+    const gastos = GASTOS[p] || [];
+    const totalRev = b?.aR || 0;
+    const totalExp = gastos.reduce((s, g) => s + g.am, 0);
+    const isAf = tk?.t === "A";
+    const admin = isAf ? totalRev * 0.10 : 0;
+    const npr = isAf ? 0 : totalRev * 0.05;
+    const fixed = isAf ? 0 : 165;
+    const nC = (b?.aT || 0) * 11;
+    const totalDed = totalExp + nC + admin + npr + fixed;
+    const saldo = totalRev - totalDed;
+    const tix = TIX.filter(t => t.p === p);
+    return { tk, b, tl, gastos, totalRev, totalExp, totalDed, saldo, isAf, admin, tix };
+  });
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Mis camiones</h2>
+      <p style={{ fontSize: 12, color: "#9CA3AF", margin: "0 0 16px" }}>{partner.name} - {partner.plates.length} camion{partner.plates.length > 1 ? "es" : ""}</p>
+
+      {myTrucks.map(({ tk, b, tl, gastos, totalRev, totalDed, saldo, isAf, admin, tix }, idx) => (
+        <div key={tk.p} style={{ marginBottom: idx < myTrucks.length - 1 ? 24 : 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: tk.c, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>{tk.a.slice(0, 3)}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontWeight: 700, fontSize: 16 }}>{tk.a}</span>
+                {isAf && <span style={{ fontSize: 8, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#FEF3C7", color: "#92400e" }}>AFILIADO</span>}
+              </div>
+              <p style={{ fontSize: 12, color: "#6B7280", margin: 0 }}>{tk.d} - {tk.p}</p>
+            </div>
+            <div style={{ padding: "4px 10px", borderRadius: 8, background: b?.st === "activo" ? "#DCFCE7" : b?.st === "inactivo" ? "#FEF3C7" : "#F3F4F6" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: b?.st === "activo" ? "#15803d" : b?.st === "inactivo" ? "#92400e" : "#6B7280" }}>{(b?.st || "N/A").toUpperCase()}</span>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+            <div style={{ background: "#ECFDF5", borderRadius: 14, padding: 10, textAlign: "center" }}><p style={{ fontSize: 9, color: "#059669", margin: 0 }}>Facturado</p><p style={{ fontSize: 16, fontWeight: 700, color: "#059669", margin: 0 }}>{$(totalRev)}</p></div>
+            <div style={{ background: "#FEF2F2", borderRadius: 14, padding: 10, textAlign: "center" }}><p style={{ fontSize: 9, color: "#DC2626", margin: 0 }}>Deducciones</p><p style={{ fontSize: 16, fontWeight: 700, color: "#DC2626", margin: 0 }}>{$(totalDed)}</p></div>
+            <div style={{ background: saldo >= 0 ? "#F0FDF4" : "#FEF2F2", borderRadius: 14, padding: 10, textAlign: "center" }}><p style={{ fontSize: 9, color: saldo >= 0 ? "#059669" : "#DC2626", margin: 0 }}>Saldo</p><p style={{ fontSize: 16, fontWeight: 700, color: saldo >= 0 ? "#059669" : "#DC2626", margin: 0 }}>{$(saldo)}</p></div>
+          </div>
+
+          {isAf && <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "8px 12px", marginBottom: 12, fontSize: 11, color: "#92400e" }}>Comision administrativa 10%: {$(admin)}</div>}
+
+          {tix.length > 0 && <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 14, padding: 12, marginBottom: 12 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: "#DC2626", margin: "0 0 6px" }}>EN TALLER</p>
+            {tix.map(t => <div key={t.id}><p style={{ fontSize: 12, fontWeight: 600, margin: 0 }}>{t.prob}</p><p style={{ fontSize: 10, color: "#6B7280", margin: "2px 0 4px" }}>Mecanico: {t.mec}</p>{t.parts.map((p, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, marginBottom: 2 }}><Dot color={p.st === "needed" ? "#EF4444" : p.st === "ordered" ? "#F59E0B" : "#10B981"} size={6} />{p.qty}x {p.name} - <span style={{ fontWeight: 600 }}>{p.st === "needed" ? "Falta" : p.st === "ordered" ? "Pedido" : "Listo"}</span></div>)}</div>)}
+          </div>}
+
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "0 0 6px" }}>Viajes esta quincena</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
+            {tl.length > 0 ? tl.map((v, i) => (
+              <div key={i} style={{ background: "white", borderRadius: 10, border: "1px solid #F3F4F6", padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#374151", width: 36 }}>{v.dt}</span>
+                <div style={{ flex: 1 }}><p style={{ fontSize: 11, margin: 0 }}>{v.ms}</p><p style={{ fontSize: 9, color: "#9CA3AF", margin: 0 }}>{v.tr}v - {v.tons.toFixed(0)}t</p></div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#059669" }}>{$(v.rev)}</span>
+              </div>
+            )) : <p style={{ fontSize: 11, color: "#9CA3AF" }}>Sin viajes registrados</p>}
+          </div>
+
+          {gastos.length > 0 && <>
+            <p style={{ fontSize: 10, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", margin: "0 0 6px" }}>Gastos cargados</p>
+            {gastos.map((g, i) => <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0", borderBottom: "1px solid #F3F4F6" }}><span><span style={{ color: "#9CA3AF" }}>{g.dt} </span>{g.d}</span><span style={{ fontWeight: 600, color: "#DC2626" }}>{$(g.am)}</span></div>)}
+          </>}
+
+          {idx < myTrucks.length - 1 && <hr style={{ border: "none", borderTop: "2px solid #E5E7EB", margin: "20px 0 0" }} />}
+        </div>
+      ))}
+
+      <div style={{ background: "#F0F9FF", border: "1px solid #BAE6FD", borderRadius: 16, padding: 14, marginTop: 16 }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: "#0369A1", margin: "0 0 4px" }}>Tu vista de socio incluye:</p>
+        <p style={{ fontSize: 11, color: "#6B7280", margin: 0, lineHeight: 1.6 }}>
+          Timeline de viajes dia a dia<br />
+          Gastos cargados a tu camion<br />
+          Saldo neto (facturacion - deducciones)<br />
+          Estado del camion (activo / taller / parado)<br />
+          Repuestos pendientes si esta en taller<br />
+          <strong>No necesitas llamar al encargado</strong>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ MAIN ═══ */
+function App() {
+  const [user, setUser] = useState(null);
+  const [page, setPage] = useState("home");
+
+  if (!user) return <LoginScreen onLogin={u => { setUser(u); setPage("home"); }} />;
+
+  const NAV = {
+    admin: [
+      { id: "home", l: "Hoy", Icon: IconHome },
+      { id: "viajes", l: "Viajes", Icon: IconTruck },
+      { id: "gastos", l: "Gastos", Icon: IconDollar },
+      { id: "taller", l: "Taller", Icon: IconWrench },
+      { id: "mas", l: "Mas", Icon: IconMore },
+    ],
+    mechanic: [{ id: "home", l: "Taller", Icon: IconWrench }],
+    partner: [{ id: "home", l: "Mi camion", Icon: IconTruck }],
+    viewer: [{ id: "home", l: "Resumen", Icon: IconHome }],
+  };
+  const navItems = NAV[user.role] || NAV.viewer;
+
+  const DEMO_BUTTONS = [
+    { l: "Encargado", pin: "1234" },
+    { l: "Mecanico", pin: "5678" },
+    { l: "Dueno", pin: "0000" },
+    { l: "Socio Leo", pin: "1001" },
+    { l: "Socio Neto", pin: "1007" },
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#F9FAFB", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", overflow: "hidden" }}>
+      {/* Demo role switcher */}
+      <div style={{ background: "#1E293B", padding: "5px 10px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <span style={{ fontSize: 8, color: "#64748B", fontWeight: 600, flexShrink: 0 }}>DEMO</span>
+        {DEMO_BUTTONS.map(r => (
+          <button key={r.pin}
+            onClick={() => { const p = PINS[r.pin]; if (p) { setUser({ pin: r.pin, ...p }); setPage("home"); } }}
+            style={{ background: user.pin === r.pin ? AC : "#334155", border: "none", borderRadius: 6, padding: "3px 8px", fontSize: 9, fontWeight: 600, color: "white", cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}>
+            {r.l}
+          </button>
+        ))}
+        <button onClick={() => setUser(null)} style={{ background: "none", border: "none", color: "#475569", fontSize: 9, cursor: "pointer", marginLeft: "auto", flexShrink: 0 }}>Salir</button>
+      </div>
+
+      {/* Header */}
+      <header style={{ background: "#111827", color: "white", padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <div>
+          <h1 style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>Transporte Jose Rodriguez</h1>
+          <p style={{ fontSize: 10, color: "#FBBF24", fontWeight: 600, margin: 0 }}>{user.name} - {user.sub}</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#34D399" }} />
+          <span style={{ fontSize: 10, color: "#6B7280" }}>13</span>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main style={{ flex: 1, overflow: "auto", padding: 14, WebkitOverflowScrolling: "touch" }}>
+        {user.role === "admin" && <AdminView page={page} setPage={setPage} />}
+        {user.role === "mechanic" && <MechanicView />}
+        {user.role === "viewer" && <ViewerView />}
+        {user.role === "partner" && <PartnerView user={user} />}
+      </main>
+
+      {/* Nav */}
+      <nav style={{ background: "white", borderTop: "1px solid #F3F4F6", display: "grid", gridTemplateColumns: `repeat(${navItems.length}, 1fr)`, flexShrink: 0 }}>
+        {navItems.map(n => (
+          <button key={n.id} onClick={() => setPage(n.id)}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "7px 0", background: "none", border: "none", color: (page === n.id || (n.id === "mas" && ["nomina","fiados","prestamos","caja","deuda","relacion","despacho","whatsapp","comparar","tco"].includes(page))) ? AC : "#9CA3AF", cursor: "pointer" }}>
+            <n.Icon s={18} c={(page === n.id || (n.id === "mas" && ["nomina","fiados","prestamos","caja","deuda","relacion","despacho","whatsapp","comparar","tco"].includes(page))) ? AC : "#9CA3AF"} />
+            <span style={{ fontSize: 8, fontWeight: 500 }}>{n.l}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
+</script>
+</body>
+</html>
